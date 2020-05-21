@@ -1,6 +1,8 @@
 
 
-from .pipeline import Pipeline
+import radical.utils as ru
+
+from .pipeline import PipelineDescription, Pipeline
 
 
 # ------------------------------------------------------------------------------
@@ -9,26 +11,42 @@ class Workflow(object):
 
     def __init__(self, descr):
 
-        self._pipelines = [Pipeline(pd) for pd in descr]
+        self._descr     = descr
+        self._pipelines = dict()
+        self._cb        = list()
         self._state     = 'NEW'
-        self._cb        = None
 
+        self.add_pipelines(descr.pipelines)
 
     @property
     def state(self):
         return self._state
 
+    @property
+    def pipelines(self):
+        return self._pipelines
+
+    def add_pipelines(self, pipelines):
+        for x in ru.as_list(pipelines):
+            if   isinstance(x, Pipeline)           : p = x
+            elif isinstance(x, PipelineDescription): p = Pipeline(x)
+
+            assert(p.uid not in self._pipelines)  # not known yet
+            assert(not p.workflow)                # not assigned to workflow, yet
+
+            self._pipelines[p.uid] = p
+            p._workflow = self.uid
+
     def cancel(self):
         pass
 
     def add_callback(self, cb):
-        self._cb = cb
+        self._cb.append(cb)
 
     def _advance(self, state):
-
         self._state = state
-        if self._cb:
-            self._cb()
+        for cb in self._cb:
+            cb()
 
 
 # ------------------------------------------------------------------------------
