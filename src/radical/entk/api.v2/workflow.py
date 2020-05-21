@@ -7,14 +7,26 @@ from .pipeline import PipelineDescription, Pipeline
 
 # ------------------------------------------------------------------------------
 #
+class WorkflowDescription(ru.Description):
+
+    ...
+
+
+# ------------------------------------------------------------------------------
+#
 class Workflow(object):
 
-    def __init__(self, descr):
+    def __init__(self, descr=None, uid=None):
 
         self._descr     = descr
         self._pipelines = dict()
         self._cb        = list()
         self._state     = 'NEW'
+
+        if uid: pass  # TODO reconnect
+        else  : uid = ru.generate_uid('re.amgr')
+
+
 
         self.add_pipelines(descr.pipelines)
 

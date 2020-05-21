@@ -1,4 +1,8 @@
 
+import radical.utils as ru
+
+from .workflow import Workflow, WorkflowDescription
+
 
 # ------------------------------------------------------------------------------
 #
@@ -10,64 +14,53 @@ class AppManager(object):
 
         self._rtype     = rtype or 'radical.pilot'
         self._backend   = rtype.create_backend  # ...
+        self._resources = dict()
         self._workflows = dict()                # uid - Workflow
-        self._cb        = None
+        self._cb        = list()
 
+        if uid: pass  # TODO reconnect
+        else  : uid = ru.generate_uid('re.amgr')
 
-    # --------------------------------------------------------------------------
-    #
     @property
     def uid(self):
-
         return self._uid
+
+    @property
+    def workflows(self):
+        return self._workflows
+
+    @property
+    def resources(self):
+        return self._resources
+
+    def add_callback(self, cb):
+        self._cb.append(cb)
 
 
     # --------------------------------------------------------------------------
     #
     def acquire_resource(self, descr):
-
-        self._backend.acquire_resource(descr)
-
-
-    def list_resources(self):
-
-        return self._backend.list_resources()
-
+        r = self._backend.acquire_resource(descr)
+        assert(r.uid not in self._resources)
+        self._resources[r.uid] = r
 
     def release_resource(self, rid):
-
-        return self._backend.release_resource(rid)
+        return self._resources[rid].release()
 
 
     # --------------------------------------------------------------------------
     #
-    def submit(self, workflow):
+    def submit(self, workflows):
+        for x in ru.as_list(workflows):
+            if   isinstance(x, WorkflowDescription): w = Workflow(x)
+            elif isinstance(x, Workflow)           : w = x
 
-        self._workflows[workflow.uid] = workflow
+            assert(w.uid not in self._workflows)  # not known yet
 
+            self._workflows[w.uid] = w
 
-    def list_workflows(self):
-
-        return self._workflows.keys()
-
-
-    def get_workflow(self, uid):
-
-        return self._workflows[uid]
-
-
-    def cancel(self, workflow_id):
-
+    def wait(self, uids=None):
         pass
-
-
-    def add_callback(self, cb):
-        self._cb = cb
-
-    # goes to workflow
-  # def shared_data(self):
-  # def outputs(self):
-
 
 
 # ------------------------------------------------------------------------------
